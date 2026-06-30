@@ -6,6 +6,7 @@ from scipy.optimize import linear_sum_assignment
 from sklearn.metrics import normalized_mutual_info_score, adjusted_rand_score, v_measure_score
 import scipy.io as scio
 from sklearn import preprocessing
+from data_utils import normalize_label, normalize_view
 min_max_scaler = preprocessing.MinMaxScaler()
 
 nmi = normalized_mutual_info_score
@@ -22,13 +23,16 @@ class multiViewDataset2(Dataset):
         matData = scio.loadmat(dataPath)
         self.data=[]
         self.viewNumber = viewNumber
+        # 先读取 Y 以获取样本数，安全处理 [n,1]/[1,n]
+        Y = normalize_label(matData['Y'])
+        self.labels = Y
+        n_samples = len(Y)
         for viewIndex in range(viewNumber):
             temp=matData['X'+str(viewIndex+1)].astype(np.float32)
+            temp = normalize_view(temp, n_samples=n_samples, view_name=f'X{viewIndex+1}')
             if self.viewNumber>=2:  # [DUPLICATE-DIFF] imagedataset 此处为 >=6
                 temp=min_max_scaler.fit_transform(temp)
             self.data.append(temp)
-        Y = matData['Y'][0]
-        self.labels = Y
         self.pretrain=pretrain
 
 
@@ -55,13 +59,16 @@ class imagedataset(Dataset):
         matData = scio.loadmat(dataPath)
         self.data=[]
         self.viewNumber = viewNumber
+        # 先读取 Y 以获取样本数，安全处理 [n,1]/[1,n]
+        Y = normalize_label(matData['Y'])
+        self.labels = Y
+        n_samples = len(Y)
         for viewIndex in range(viewNumber):
             temp=matData['X'+str(viewIndex+1)].astype(np.float32)
+            temp = normalize_view(temp, n_samples=n_samples, view_name=f'X{viewIndex+1}')
             if self.viewNumber>=6:  # [DUPLICATE-DIFF] multiViewDataset2 此处为 >=2
                 temp=min_max_scaler.fit_transform(temp)
             self.data.append(temp)
-        Y = matData['Y'][0]
-        self.labels = Y
         self.pretrain=pretrain
 
 

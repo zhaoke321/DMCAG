@@ -12,8 +12,6 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import numpy as np
 from sklearn.cluster import KMeans
-from sklearn.metrics.cluster import normalized_mutual_info_score as nmi_score
-from sklearn.metrics import adjusted_rand_score as ari_score
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -34,7 +32,9 @@ normalize = preprocessing.Normalizer()
 min_max_scaler = preprocessing.MinMaxScaler()
 normalize = preprocessing.Normalizer()
 
-from utils import cluster_acc, WKLDiv, multiViewDataset2
+from utils import WKLDiv, multiViewDataset2
+from metrics_utils import clustering_metrics, check_metric_inputs
+from config_utils import apply_dataset_config
 # [DUPLICATE-BUG] 重复 import os（第 3 行已导入）
 import os
 
@@ -378,8 +378,8 @@ def pretrain_aes():
             x[viewIndex] = x[viewIndex].cuda()
         output = model(x)
         y = y.data.cpu().numpy()
-    kmeans = KMeans(n_clusters=args.n_clusters, n_init=100)
-    kmeans_arch = KMeans(n_clusters=args.arch, n_init=100)
+    kmeans = KMeans(n_clusters=args.n_clusters, n_init=100, random_state=args.seed)
+    kmeans_arch = KMeans(n_clusters=args.arch, n_init=100, random_state=args.seed)
     for viewIndex in range(args.viewNumber):
         z_v = output[viewIndex][1]
 
@@ -409,7 +409,7 @@ def pretrain_aes():
     torch.save(model.state_dict(), args.save_path)
 """
     f_temp = cacluate_U(torch.clamp(model.cl_weight.data, 0, 1))
-    kmeans = KMeans(n_clusters=args.n_clusters, n_init=100)
+    kmeans = KMeans(n_clusters=args.n_clusters, n_init=100, random_state=args.seed)
     kmeans.fit_predict(f_temp.cpu().detach().data.numpy())
     y_pred = kmeans.labels_
     #y_pred = (np.argmax(qpred.cpu().detach().data.numpy(), axis=1))
@@ -420,7 +420,7 @@ def pretrain_aes():
           ', nmi {:.4f}'.format(nmi), ', ari {:.4f}'.format(ari))
 
 
-    kmeans = KMeans(n_clusters=args.n_clusters, n_init=100)
+    kmeans = KMeans(n_clusters=args.n_clusters, n_init=100, random_state=args.seed)
     kmeans.fit_predict(f_all.cpu().detach().data.numpy())
     y_pred = kmeans.labels_
     #y_pred = (np.argmax(qpred.cpu().detach().data.numpy(), axis=1))
@@ -580,7 +580,7 @@ def fineTuning():
                 else:
                     f_all = torch.cat((f_all, f_temp), dim=1)
 
-            kmeans = KMeans(n_clusters=args.n_clusters, n_init=100)
+            kmeans = KMeans(n_clusters=args.n_clusters, n_init=100, random_state=args.seed)
             kmeans.fit_predict(f_all.cpu().detach().data.numpy())
 
 
@@ -600,7 +600,7 @@ def fineTuning():
             print('mse_loss: {:.4f}'.format(mseloss),
                   ',kl_loss{:.4f}'.format(kl_loss))
 
-    kmeans_arch = KMeans(n_clusters=args.arch, n_init=100)
+    kmeans_arch = KMeans(n_clusters=args.arch, n_init=100, random_state=args.seed)
     print('Start Contrastive Learning.')
     for epoch in tqdm.tqdm(range(100)):
         for batch_idx, (x, _, _) in enumerate(dataLoader):
@@ -642,7 +642,7 @@ def fineTuning():
             z_all = torch.cat((z_all, z_temp), dim=1)
             f_all = torch.cat((f_all, f_temp), dim=1)
 
-    kmeans = KMeans(n_clusters=args.n_clusters, n_init=100)
+    kmeans = KMeans(n_clusters=args.n_clusters, n_init=100, random_state=args.seed)
     kmeans.fit_predict(f_all.cpu().detach().data.numpy())
     q_all,p_all= make_qp(f_all,kmeans.cluster_centers_)
     for i in range(q_all.shape[0]):
@@ -650,11 +650,11 @@ def fineTuning():
 
     y_pred = kmeans.labels_
     # y_pred = (np.argmax(qpred.cpu().detach().data.numpy(), axis=1))
-    acc = cluster_acc(y, y_pred)
-    nmi = nmi_score(y, y_pred)
-    ari = ari_score(y, y_pred)
-    print('Acc {:.4f}'.format(acc),
-          ', nmi {:.4f}'.format(nmi), ', ari {:.4f}'.format(ari))
+    y_true, y_pred = check_metric_inputs(y, y_pred, dataset=args.dataset, method="DMCAG")
+    acc, nmi, ari = clustering_metrics(y_true, y_pred)
+    print(f"FINAL_RESULT dataset={args.dataset} arch={args.arch} "
+          f"gamma={args.gamma} seed={args.seed} "
+          f"Acc {acc:.4f}, nmi {nmi:.4f}, ari {ari:.4f}")
 
 # [DUPLICATE] setup_seed: 3 个训练文件中完全相同
 import random
@@ -673,78 +673,28 @@ if __name__ == "__main__":
         description='train',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--n_clusters', default=7, type=int)
     parser.add_argument('--n_z', default=10, type=int)
-    parser.add_argument('--dataset', type=str, default='BDGP')
+    parser.add_argument('--dataset', type=str, required=True)
     parser.add_argument('--arch', type=int, default=50)
-    parser.add_argument('--gamma', type=int, default=5)
+    parser.add_argument('--gamma', type=float, default=1.0)
+    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--noise', type=float, default=0)
 
-    # parser.add_argument('--update_interval', default=1000, type=int)
-    # parser.add_argument('--tol', default=0.0002, type=float)
-    # parser.add_argument('--AR', default=0.95, type=float)
     args = parser.parse_args()
-    # args.cuda =
-    # print("use cuda: {}".format(args.cuda))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    args.dataset = 'HW'
-    args.method = 'HW'
-    args.noise= 0
-    args.arch= 50
-    args.gamma= 1
 
+    # Apply dataset-specific config (n_input, viewNumber, n_clusters, etc.)
+    # Does NOT override arch, gamma, seed, noise
+    args = apply_dataset_config(args)
 
-    if args.dataset == 'BDGP':
-        args.n_input = [1750, 79]
-        args.viewNumber = 2
-        args.instanceNumber = 2500
-        args.batch_size = 2500
-        args.n_clusters = 5
-        args.save_path = './data/BDGP.pkl'
-        args.noise=1
-        args.arch=50
-        args.gamma=10
+    setup_seed(args.seed)
 
-    if args.dataset == 'HW':
-        args.n_input = [216, 76, 64, 6, 240, 47]
-        args.viewNumber = 6
-        args.instanceNumber = 2000
-        args.batch_size = 2000
-        args.n_clusters = 10
-        args.save_path = './data/HW.pkl'
-        args.arch=50
-        args.gamma=0.1
+    print(f"RUN_CONFIG dataset={args.dataset} method={args.method} "
+          f"arch={args.arch} gamma={args.gamma} seed={args.seed} "
+          f"noise={args.noise} lr={args.lr} n_z={args.n_z} "
+          f"save_path={args.save_path}")
 
-    if args.dataset == 'Fmnist-MV':
-        args.n_input = [784, 784 , 784]
-        args.viewNumber = 3
-        args.instanceNumber =10000
-        args.batch_size = 10000
-        args.n_clusters = 10
-        args.arch=50
-        args.gamma=1
-        args.save_path = './data/Fmnist-MV.pkl'
-        setup_seed(200)
-
-
-
-
-
-    if args.dataset == 'UCI-3V':
-        args.n_input = [240, 76 , 64]
-        args.viewNumber = 3
-        args.instanceNumber = 2000
-        args.batch_size = 2000
-        args.n_clusters = 10
-        args.save_path = './data/UCI_3V.pkl'
-        args.arch=10
-        args.gamma=1
-
-
-
-    print(args)
-
-    start =time()
-
+    start = time()
     t0 = time()
 
     pretrain_aes()
