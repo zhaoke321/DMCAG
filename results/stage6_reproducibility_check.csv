@@ -1,0 +1,5 @@
+dataset,arch,gamma,seed,run1_acc,run1_nmi,run1_ari,run2_acc,run2_nmi,run2_ari,acc_diff,nmi_diff,ari_diff,reproducible,notes
+BDGP,10,0.1,0,0.9544,0.8918,0.8924,0.9584,0.8994,0.9014,0.004,0.0076,0.009,acceptable,Minor variation (delta acc=0.0040 nmi=0.0076 ari=0.0090)
+BDGP,10,0.1,1,0.9656,0.9212,0.9183,,,,,,,single_run,"Only 1 run(s), can't check reproducibility"
+HW,20,1,0,0.976,0.945,0.9476,0.9795,0.9536,0.9551,0.0035,0.0086,0.0075,acceptable,Minor variation (delta acc=0.0035 nmi=0.0086 ari=0.0075)
+HW,20,1,1,0.9795,0.9533,0.9552,,,,,,,single_run,"Only 1 run(s), can't check reproducibility"

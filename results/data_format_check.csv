@@ -1,0 +1,7 @@
+dataset,file_exists,Y_raw_shape,Y_shape,Y_1d_ok,n_samples,view_keys,views_shape_ok,error
+BDGP,True,"(2500, 1)","(2500,)",PASS,2500,"X1,X2",PASS,
+HW,True,"(1, 2000)","(2000,)",PASS,2000,"X1,X2,X3,X4,X5,X6",PASS,
+MNIST_USPS,False,,,,,,,NOT_AVAILABLE
+Multi-COIL-10,False,,,,,,,NOT_AVAILABLE
+UCI-3V,False,,,,,,,NOT_AVAILABLE
+Fmnist-MV,False,,,,,,,NOT_AVAILABLE

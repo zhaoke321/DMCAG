@@ -1,0 +1,5 @@
+log_file,dataset_expected,arch_expected,gamma_expected,seed_expected,dataset_found,arch_found,gamma_found,seed_found,run_config_match,has_final_result,acc,nmi,ari,status
+BDGP_arch10_gamma0.1_seed0.log,BDGP,10,0.1,0,BDGP,10,0.1,0,MATCH,yes,0.9,0.75,0.67,complete
+HW_arch20_gamma0.1_seed1.log,HW,20,0.1,1,HW,20,0.1,1,MATCH,yes,0.85,0.72,0.64,complete
+MNIST_USPS_arch30_gamma1_seed2.log,MNIST_USPS,30,1.0,2,MNIST_USPS,30,1.0,2,MATCH,yes,0.95,0.85,0.8,complete
+Multi-COIL-10_arch40_gamma10_seed4.log,Multi-COIL-10,40,10.0,4,Multi-COIL-10,40,10.0,4,MATCH,yes,0.92,0.8,0.75,complete

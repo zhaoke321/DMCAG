@@ -1,0 +1,7 @@
+log_file,dataset,arch,gamma,seed,noise,run_id,run_config_found,run_config_match,final_result_found,acc,nmi,ari,status,message
+BDGP_arch10_gamma0.1_seed0_run1.log,BDGP,10,0.1,0,0,1,yes,MATCH,yes,0.9544,0.8918,0.8924,complete,
+BDGP_arch10_gamma0.1_seed0_run2.log,BDGP,10,0.1,0,0,2,yes,MATCH,yes,0.9584,0.8994,0.9014,complete,
+BDGP_arch10_gamma0.1_seed1.log,BDGP,10,0.1,1,0,1,yes,MATCH,yes,0.9656,0.9212,0.9183,complete,
+HW_arch20_gamma1_seed0_run1.log,HW,20,1.0,0,0,1,yes,MATCH,yes,0.976,0.945,0.9476,complete,
+HW_arch20_gamma1_seed0_run2.log,HW,20,1.0,0,0,2,yes,MATCH,yes,0.9795,0.9536,0.9551,complete,
+HW_arch20_gamma1_seed1.log,HW,20,1.0,1,0,1,yes,MATCH,yes,0.9795,0.9533,0.9552,complete,

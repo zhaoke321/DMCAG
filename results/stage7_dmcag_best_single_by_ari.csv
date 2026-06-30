@@ -1,0 +1,3 @@
+dataset,arch,gamma,seed,acc,nmi,ari,metric,log_file
+BDGP,10,10.0,1,0.9812,0.9501,0.954,ari,logs/stage7_dmcag_grid/BDGP/BDGP_arch10_gamma10_seed1.log
+HW,20,10.0,3,0.9815,0.9564,0.9594,ari,logs/stage7_dmcag_grid/HW/HW_arch20_gamma10_seed3.log
